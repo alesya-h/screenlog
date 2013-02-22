@@ -1,0 +1,91 @@
+#!/bin/bash
+TARGET_DIR="$HOME/p/work/screenshots"
+PIDFILE="$TARGET_DIR/.$(basename "$0").pid"
+CURRENT_DIR="$TARGET_DIR/current"
+CURRENT_NOTE="$CURRENT_DIR/current_note"
+INTERVAL="$((60*1))" # take a screenshot every 10 minutes
+
+if [ -z "$*" ]; then
+    cat <<EOF
+Usage: $(basename "$0") <command> [args]
+Supported commands are:
+    project <name> - Sets project as current
+    start [note]   - Start taking screenshots. Optionally set attached note to <note>.
+    stop           - Stop taking screenshots.  If project is not set, "default" is used.
+    text           - Set work description text.
+EOF
+    exit 255
+fi
+
+CMD="$1"
+shift
+
+function set_project {
+    [ $# -eq 1 ] || { echo "Error: set_project takes exactly 1 argument"; exit 1; }
+    PROJECT_DIR="$TARGET_DIR/$1"
+
+    [ ! -d "$PROJECT_DIR" ] && mkdir -p "$PROJECT_DIR"
+    if [ -e "$CURRENT_DIR" -a ! -L "$CURRENT_DIR" ] ; then
+        echo "Current project pointer (${CURRENT_DIR}) is not a symlink."
+        exit 2
+    fi
+    [ ! -e "$PROJECT_DIR" ] && mkdir -p "$PROJECT_DIR"
+    [ -L "$CURRENT_DIR" ] && rm "$CURRENT_DIR"
+    ln -s "$PROJECT_DIR" "$CURRENT_DIR"
+    [ -e "$CURRENT_NOTE" ] || touch "$CURRENT_NOTE"
+}
+
+function start_taking_screenshots {
+    (
+        while true; do
+            import -window root "$CURRENT_DIR/$(date '+%Y-%m-%d_%H-%M-%S') ($(cat "$CURRENT_NOTE")).png"
+            sleep $INTERVAL
+        done
+    ) &
+    echo $! > "$PIDFILE"
+}
+
+function stop_taking_screenshots {
+    if [[ -f "$PIDFILE" ]]; then
+        PID="$(cat "$PIDFILE")"
+        kill "$PID" 2>/dev/null || true
+        rm "$PIDFILE"
+    fi
+}
+
+function set_text {
+    [ $# -eq 1 ] || { echo "Error: set_text takes exactly 1 argument"; exit 1; }
+    echo "$1" > "$CURRENT_NOTE"
+}
+
+function screenlog_key {
+    echo
+}
+
+[ -e "$CURRENT_DIR" ] || set_project 'default'
+
+case "$CMD" in
+    "project")
+        [ -n "$*" ] && PROJECT="$*" || PROJECT="default"
+        # [ $# -eq 0 ] && { echo "Error: no project specified"; exit 1; }
+        set_project "${*-default}"
+        ;;
+    "start")
+        [ $# -gt 0 ] && set_text "$*"
+        start_taking_screenshots
+        ;;
+    "text")
+        [ $# -eq 0 ] && { echo "Error: no text specified"; exit 1; }
+        set_text "$*"
+        ;;
+    "stop")
+        stop_taking_screenshots
+        ;;
+    "key")
+        screenlog_key
+        ;;
+    *)
+        echo "unknown command \"$CMD\"" 1>&2
+        exit 1
+        ;;
+esac
