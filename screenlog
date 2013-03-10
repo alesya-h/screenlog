@@ -59,10 +59,12 @@ function start_taking_screenshots {
 }
 
 function stop_taking_screenshots {
-    if [[ -f "$PIDFILE" ]]; then
+    if [ -f "$PIDFILE" ]; then
         PID="$(cat "$PIDFILE")"
-        kill "$PID" 2>/dev/null || true
-        rm "$PIDFILE"
+        kill "$PID"
+        while kill -0 $PID 2>/dev/null ; do
+            sleep 0.1
+        done
     fi
 }
 
