@@ -73,6 +73,14 @@ case "$CMD" in
         # [ $# -eq 0 ] && { echo "Error: no project specified"; exit 1; }
         set_project "${*-default}"
         ;;
+    "pid")
+        if [ -e "$PIDFILE" ]; then
+          cat "$PIDFILE"
+          ps `cat "$PIDFILE"`
+        else
+          echo "Screenlog is stopped"
+        fi
+        ;;
     "list")
         ls -l --color "$TARGET_DIR"
         ;;
