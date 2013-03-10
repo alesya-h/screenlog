@@ -71,7 +71,6 @@ function screenlog_key {
 case "$CMD" in
     "project")
         [ -n "$*" ] && PROJECT="$*" || PROJECT="default"
-        # [ $# -eq 0 ] && { echo "Error: no project specified"; exit 1; }
         set_project "${*-default}"
         ;;
     "status")
