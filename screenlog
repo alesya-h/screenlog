@@ -10,6 +10,7 @@ if [ -z "$*" ]; then
 Usage: $(basename "$0") <command> [args]
 Supported commands are:
     project <name> - Sets project as current
+    list           - List projects
     start [note]   - Start taking screenshots. Optionally set attached note to <note>.
     stop           - Stop taking screenshots.  If project is not set, "default" is used.
     text           - Set work description text.
@@ -69,6 +70,9 @@ case "$CMD" in
         [ -n "$*" ] && PROJECT="$*" || PROJECT="default"
         # [ $# -eq 0 ] && { echo "Error: no project specified"; exit 1; }
         set_project "${*-default}"
+        ;;
+    "list")
+        ls -l --color "$TARGET_DIR"
         ;;
     "start")
         [ $# -gt 0 ] && set_text "$*"
