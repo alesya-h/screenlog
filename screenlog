@@ -74,7 +74,7 @@ case "$CMD" in
         # [ $# -eq 0 ] && { echo "Error: no project specified"; exit 1; }
         set_project "${*-default}"
         ;;
-    "pid")
+    "status")
         if [ -e "$PIDFILE" ]; then
           cat "$PIDFILE"
           ps `cat "$PIDFILE"`
