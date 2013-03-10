@@ -36,17 +36,26 @@ function set_project {
     [ -e "$CURRENT_NOTE" ] || touch "$CURRENT_NOTE"
 }
 
+function take_screenshots {
+    SLEEP_PID=''
+    trap 'kill ${SLEEP_PID}; rm ${PIDFILE}; trap - INT QUIT TERM EXIT; exit' INT QUIT TERM EXIT
+    while true; do
+        DAY_DIR="$CURRENT_DIR/$(date '+%Y-%m-%d_%A')"
+        [ -d "$DAY_DIR" ] || mkdir -p "$DAY_DIR"
+        import -window root "$DAY_DIR/$(date '+%H-%M-%S') ($(cat "$CURRENT_NOTE")).png"
+        sleep $INTERVAL &
+        SLEEP_PID="$!"
+        wait "$SLEEP_PID"
+    done
+}
+
 function start_taking_screenshots {
-    (
-        trap "rm $PIDFILE" INT QUIT TERM EXIT
-        while true; do
-            DAY_DIR="$CURRENT_DIR/$(date '+%Y-%m-%d_%A')"
-            [ -d "$DAY_DIR" ] || mkdir -p "$DAY_DIR"
-            import -window root "$DAY_DIR/$(date '+%H-%M-%S') ($(cat "$CURRENT_NOTE")).png"
-            sleep $INTERVAL
-        done
-    ) &
-    echo $! > "$PIDFILE"
+    if [ -f "$PIDFILE" ]; then
+        echo "Screenlog is already running as process $(cat ${PIDFILE})"
+    else
+        take_screenshots &
+        echo $! > "$PIDFILE"
+    fi
 }
 
 function stop_taking_screenshots {
