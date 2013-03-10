@@ -13,7 +13,7 @@ Supported commands are:
     list           - List projects
     start [note]   - Start taking screenshots. Optionally set attached note to <note>.
     stop           - Stop taking screenshots.  If project is not set, "default" is used.
-    text           - Set work description text.
+    note           - Set work description note
 EOF
     exit 255
 fi
@@ -57,8 +57,8 @@ function stop_taking_screenshots {
     fi
 }
 
-function set_text {
-    [ $# -eq 1 ] || { echo "Error: set_text takes exactly 1 argument"; exit 1; }
+function set_note {
+    [ $# -eq 1 ] || { echo "Error: set_note takes exactly 1 argument"; exit 1; }
     echo "$1" > "$CURRENT_NOTE"
 }
 
@@ -86,7 +86,7 @@ case "$CMD" in
         ls -l --color "$TARGET_DIR"
         ;;
     "start")
-        [ $# -gt 0 ] && set_text "$*"
+        [ $# -gt 0 ] && set_note "$*"
         start_taking_screenshots
         ;;
     "restart")
@@ -94,9 +94,9 @@ case "$CMD" in
         [ $# -gt 0 ] && set_note "$*"
         start_taking_screenshots
         ;;
-    "text")
+    "note")
         [ $# -eq 0 ] && { echo "Error: no text specified"; exit 1; }
-        set_text "$*"
+        set_note "$*"
         ;;
     "stop")
         stop_taking_screenshots
