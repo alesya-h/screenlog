@@ -3,7 +3,7 @@ TARGET_DIR="$HOME/p/work/screenshots"
 PIDFILE="$TARGET_DIR/.$(basename "$0").pid"
 CURRENT_DIR="$TARGET_DIR/current"
 CURRENT_NOTE="$CURRENT_DIR/current_note"
-INTERVAL="$((60*10))" # take a screenshot every 10 minutes
+INTERVAL="$((60*5))" # take a screenshot every 5 minutes
 
 if [ -z "$*" ]; then
     cat <<EOF
