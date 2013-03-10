@@ -91,7 +91,6 @@ case "$CMD" in
         ;;
     "restart")
         stop_taking_screenshots
-        [ $# -gt 0 ] && set_note "$*"
         start_taking_screenshots
         ;;
     "note")
