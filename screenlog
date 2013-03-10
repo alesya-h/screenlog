@@ -42,7 +42,7 @@ function start_taking_screenshots {
         while true; do
             DAY_DIR="$CURRENT_DIR/$(date '+%Y-%m-%d_%A')"
             [ -d "$DAY_DIR" ] || mkdir -p "$DAY_DIR"
-            import -window root "$DAY_DIR/$(date '+%Y-%m-%d_%H-%M-%S') ($(cat "$CURRENT_NOTE")).png"
+            import -window root "$DAY_DIR/$(date '+%H-%M-%S') ($(cat "$CURRENT_NOTE")).png"
             sleep $INTERVAL
         done
     ) &
