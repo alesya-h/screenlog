@@ -75,9 +75,6 @@ function set_note {
     echo "$1" > "$CURRENT_NOTE"
 }
 
-function screenlog_key {
-    echo
-}
 
 [ -e "$CURRENT_DIR" ] || set_project 'default'
 
@@ -111,9 +108,6 @@ case "$CMD" in
         ;;
     "stop")
         stop_taking_screenshots
-        ;;
-    "key")
-        screenlog_key
         ;;
     *)
         echo "unknown command \"$CMD\"" 1>&2
