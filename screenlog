@@ -1,5 +1,5 @@
 #!/bin/bash
-TARGET_DIR="$HOME/p/work/screenshots"
+TARGET_DIR="$HOME/screenlog"
 PIDFILE="$TARGET_DIR/.$(basename "$0").pid"
 CURRENT_DIR="$TARGET_DIR/current"
 CURRENT_NOTE="$CURRENT_DIR/current_note"
