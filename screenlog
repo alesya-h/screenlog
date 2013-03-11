@@ -1,8 +1,7 @@
 #!/bin/bash
 TARGET_DIR="$HOME/screenlog"
 PIDFILE="$TARGET_DIR/.$(basename "$0").pid"
-CURRENT_DIR="$TARGET_DIR/current"
-CURRENT_NOTE="$CURRENT_DIR/current_note"
+CURRENT_NOTE="$TARGET_DIR/current_note"
 INTERVAL="$((60*10))" # take a screenshot every 10 minutes
 DATE_DIR_FORMAT='+%Y-%m-%d_%A'
 DATE_FILE_FORMAT='+%H-%M-%S'
@@ -11,8 +10,6 @@ if [ -z "$*" ]; then
     cat <<EOF
 Usage: $(basename "$0") <command> [args]
 Supported commands are:
-    project <name> - Sets project as current
-    list           - List projects
     start [note]   - Start taking screenshots. Optionally set attached note to <note>.
     stop           - Stop taking screenshots.  If project is not set, "default" is used.
     note           - Set work description note
@@ -23,26 +20,11 @@ fi
 CMD="$1"
 shift
 
-function set_project {
-    [ $# -eq 1 ] || { echo "Error: set_project takes exactly 1 argument"; exit 1; }
-    PROJECT_DIR="$TARGET_DIR/$1"
-
-    [ ! -d "$PROJECT_DIR" ] && mkdir -p "$PROJECT_DIR"
-    if [ -e "$CURRENT_DIR" -a ! -L "$CURRENT_DIR" ] ; then
-        echo "Current project pointer (${CURRENT_DIR}) is not a symlink."
-        exit 2
-    fi
-    [ ! -e "$PROJECT_DIR" ] && mkdir -p "$PROJECT_DIR"
-    [ -L "$CURRENT_DIR" ] && rm "$CURRENT_DIR"
-    ln -s "$PROJECT_DIR" "$CURRENT_DIR"
-    [ -e "$CURRENT_NOTE" ] || touch "$CURRENT_NOTE"
-}
-
 function take_screenshots {
     SLEEP_PID=''
     trap 'kill ${SLEEP_PID}; rm ${PIDFILE}; trap - INT QUIT TERM EXIT; exit' INT QUIT TERM EXIT
     while true; do
-        DAY_DIR="$CURRENT_DIR/$(date "$DATE_DIR_FORMAT")"
+        DAY_DIR="$TARGET_DIR/$(date "$DATE_DIR_FORMAT")"
         [ -d "$DAY_DIR" ] || mkdir -p "$DAY_DIR"
         import -window root "$DAY_DIR/$(date "$DATE_FILE_FORMAT") ($(cat "$CURRENT_NOTE")).png"
         sleep $INTERVAL &
@@ -91,18 +73,12 @@ function annotate {
     shift $(($OPTIND-1))
     MESSAGE="$*"
     echo "date:$DATE_D from:$FROM to:$TO"
-    pushd "$CURRENT_DIR/$(date -d "$DATE_D" "$DATE_DIR_FORMAT")"
+    pushd "$TARGET_DIR/$(date -d "$DATE_D" "$DATE_DIR_FORMAT")"
     ls | sed -n -e "/^${FROM}/,/^${TO}/p" | xargs -d "\n" $RENAME_CMD "s/\(.*\)/(${MESSAGE})/" --
     popd
 }
 
-[ -e "$CURRENT_DIR" ] || set_project 'default'
-
 case "$CMD" in
-    "project")
-        [ -n "$*" ] && PROJECT="$*" || PROJECT="default"
-        set_project "${*-default}"
-        ;;
     "status")
         if [ -e "$PIDFILE" ]; then
             cat "$PIDFILE"
@@ -110,9 +86,6 @@ case "$CMD" in
         else
             echo "Screenlog is stopped"
         fi
-        ;;
-    "list")
-        ls -l --color "$TARGET_DIR"
         ;;
     "start")
         [ $# -gt 0 ] && set_note "$*"
