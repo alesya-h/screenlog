@@ -88,10 +88,10 @@ case "$CMD" in
         ;;
     "status")
         if [ -e "$PIDFILE" ]; then
-          cat "$PIDFILE"
-          ps `cat "$PIDFILE"`
+            cat "$PIDFILE"
+            ps `cat "$PIDFILE"`
         else
-          echo "Screenlog is stopped"
+            echo "Screenlog is stopped"
         fi
         ;;
     "list")
