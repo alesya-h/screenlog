@@ -4,6 +4,8 @@ PIDFILE="$TARGET_DIR/.$(basename "$0").pid"
 CURRENT_DIR="$TARGET_DIR/current"
 CURRENT_NOTE="$CURRENT_DIR/current_note"
 INTERVAL="$((60*5))" # take a screenshot every 5 minutes
+DATE_DIR_FORMAT='+%Y-%m-%d_%A'
+DATE_FILE_FORMAT='+%H-%M-%S'
 
 if [ -z "$*" ]; then
     cat <<EOF
@@ -40,9 +42,9 @@ function take_screenshots {
     SLEEP_PID=''
     trap 'kill ${SLEEP_PID}; rm ${PIDFILE}; trap - INT QUIT TERM EXIT; exit' INT QUIT TERM EXIT
     while true; do
-        DAY_DIR="$CURRENT_DIR/$(date '+%Y-%m-%d_%A')"
+        DAY_DIR="$CURRENT_DIR/$(date "$DATE_DIR_FORMAT")"
         [ -d "$DAY_DIR" ] || mkdir -p "$DAY_DIR"
-        import -window root "$DAY_DIR/$(date '+%H-%M-%S') ($(cat "$CURRENT_NOTE")).png"
+        import -window root "$DAY_DIR/$(date "$DATE_FILE_FORMAT") ($(cat "$CURRENT_NOTE")).png"
         sleep $INTERVAL &
         SLEEP_PID="$!"
         wait "$SLEEP_PID"
