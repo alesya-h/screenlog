@@ -75,6 +75,26 @@ function set_note {
     echo "$1" > "$CURRENT_NOTE"
 }
 
+function annotate {
+    RENAME_CMD='perl-rename -v'
+    DATE_D='today'
+    FROM=''
+    TO='end'
+    while getopts d:f:t:n name; do
+        case "$name" in
+        d) DATE_D="$OPTARG";;
+        f) FROM="$OPTARG";;
+        t) TO="$OPTARG";;
+        n) RENAME_CMD="$RENAME_CMD -n";;
+        esac
+    done
+    shift $(($OPTIND-1))
+    MESSAGE="$*"
+    echo "date:$DATE_D from:$FROM to:$TO"
+    pushd "$CURRENT_DIR/$(date -d "$DATE_D" "$DATE_DIR_FORMAT")"
+    ls | sed -n -e "/^${FROM}/,/^${TO}/p" | xargs -d "\n" $RENAME_CMD "s/\(.*\)/(${MESSAGE})/" --
+    popd
+}
 
 [ -e "$CURRENT_DIR" ] || set_project 'default'
 
@@ -102,6 +122,9 @@ case "$CMD" in
         stop_taking_screenshots
         start_taking_screenshots
         ;;
+    "annotate")
+        annotate "$@"
+      ;;
     "note")
         [ $# -eq 0 ] && { echo "Error: no text specified"; exit 1; }
         set_note "$*"
