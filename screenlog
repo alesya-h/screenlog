@@ -2,31 +2,61 @@
 TARGET_DIR="$HOME/screenlog"
 PIDFILE="$TARGET_DIR/.$(basename "$0").pid"
 CURRENT_NOTE="$TARGET_DIR/current_note"
-INTERVAL="$((60*10))" # take a screenshot every 10 minutes
+INTERVAL="$((60*5))" # take a screenshot every 5 minutes
 DATE_DIR_FORMAT='+%Y-%m-%d_%A'
 DATE_FILE_FORMAT='+%H-%M-%S'
+SELF=$(readlink -e "$0")
 
 if [ -z "$*" ]; then
     cat <<EOF
 Usage: $(basename "$0") <command> [args]
 Supported commands are:
-    start [note]   - Start taking screenshots. Optionally set attached note to <note>.
-    stop           - Stop taking screenshots.  If project is not set, "default" is used.
-    note           - Set work description note
+    start [-d n]  - Start taking screenshots
+    stop          - Stop taking screenshots
+    take          - Take screenshot
+Requires zenity and rename (non-perl, util-linux one) to work propperly.
 EOF
     exit 255
 fi
 
-CMD="$1"
-shift
+function running {
+    if [ -e "$PIDFILE" ]; then
+        ps $(cat "$PIDFILE") 2>&1 >/dev/null || rm "$PIDFILE"
+    fi
+    [ -e "$PIDFILE" ]
+}
+
+function set_note {
+    [ $# -eq 1 ] || { echo "Error: set_note takes exactly 1 argument"; exit 1; }
+    echo "$1" > "$CURRENT_NOTE"
+}
+
+function take_screenshot {
+    DAY_DIR="$TARGET_DIR/$(date "$DATE_DIR_FORMAT")"
+    [ -d "$DAY_DIR" ] || mkdir -p "$DAY_DIR"
+    NOTE="$(cat "$CURRENT_NOTE")"
+    FILENAME="${DAY_DIR}/$(date "$DATE_FILE_FORMAT") ($NOTE).png"
+    import -window root "$FILENAME"
+    DURATION="$(date -u -d "@$(expr $(date +%s) - $(stat -c %Z "$CURRENT_NOTE"))" +%R)"
+    MESSAGE="What you have been doing now, at $(date +%R) ?\nCurrent streak: $DURATION"
+    NEW_NOTE="$(zenity --entry --entry-text="$NOTE" --text="$MESSAGE" || echo "$NOTE" )"
+    if [ "$NOTE" != "$NEW_NOTE" ]; then
+        rename "($NOTE)" "($NEW_NOTE)" "$FILENAME"
+        set_note "$NEW_NOTE"
+    fi
+}
 
 function take_screenshots {
     SLEEP_PID=''
+    DELAY="${1:-0}"
     trap 'kill ${SLEEP_PID}; rm ${PIDFILE}; trap - INT QUIT TERM EXIT; exit' INT QUIT TERM EXIT
+    if [ "$DELAY" -gt 0 ]; then
+        sleep "$DELAY" &
+        SLEEP_PID="$!"
+        wait "$SLEEP_PID"
+    fi
     while true; do
-        DAY_DIR="$TARGET_DIR/$(date "$DATE_DIR_FORMAT")"
-        [ -d "$DAY_DIR" ] || mkdir -p "$DAY_DIR"
-        import -window root "$DAY_DIR/$(date "$DATE_FILE_FORMAT") ($(cat "$CURRENT_NOTE")).png"
+        "$SELF" take
         sleep $INTERVAL &
         SLEEP_PID="$!"
         wait "$SLEEP_PID"
@@ -34,27 +64,45 @@ function take_screenshots {
 }
 
 function start_taking_screenshots {
-    if [ -f "$PIDFILE" ]; then
+    while getopts d: name; do
+        case "$name" in
+        d) DELAY="$OPTARG";;
+        esac
+    done
+    if running ; then
         echo "Screenlog is already running as process $(cat ${PIDFILE})"
     else
-        take_screenshots &
+        take_screenshots $DELAY &
         echo $! > "$PIDFILE"
+        echo "Started taking screenshots"
     fi
 }
 
 function stop_taking_screenshots {
-    if [ -f "$PIDFILE" ]; then
+    if running ; then
         PID="$(cat "$PIDFILE")"
         kill "$PID"
         while kill -0 $PID 2>/dev/null ; do
             sleep 0.1
         done
+        echo "Stopped taking screenshots"
+    else
+        echo "Screenlog is not running"
     fi
 }
 
-function set_note {
-    [ $# -eq 1 ] || { echo "Error: set_note takes exactly 1 argument"; exit 1; }
-    echo "$1" > "$CURRENT_NOTE"
+function status {
+    if [ -e "$PIDFILE" ]; then
+        cat "$PIDFILE"
+        ps `cat "$PIDFILE"`
+    else
+        echo "Screenlog is stopped"
+    fi
+}
+
+function today {
+    DAY_DIR="$TARGET_DIR/$(date "$DATE_DIR_FORMAT")"
+    ls -1 "$DAY_DIR" | sed 's/^[^(]*(\([^)]*\)).png$/\1/' | uniq -c
 }
 
 function annotate {
@@ -78,32 +126,31 @@ function annotate {
     popd
 }
 
+CMD="$1"
+shift
+
 case "$CMD" in
-    "status")
-        if [ -e "$PIDFILE" ]; then
-            cat "$PIDFILE"
-            ps `cat "$PIDFILE"`
-        else
-            echo "Screenlog is stopped"
-        fi
+    "take")
+        take_screenshot
         ;;
     "start")
-        [ $# -gt 0 ] && set_note "$*"
-        start_taking_screenshots
-        ;;
-    "restart")
-        stop_taking_screenshots
-        start_taking_screenshots
-        ;;
-    "annotate")
-        annotate "$@"
-      ;;
-    "note")
-        [ $# -eq 0 ] && { echo "Error: no text specified"; exit 1; }
-        set_note "$*"
+        start_taking_screenshots "$@"
         ;;
     "stop")
         stop_taking_screenshots
+        ;;
+    "restart")
+        stop_taking_screenshots
+        exec "$SELF" start "$@"
+        ;;
+    "status")
+        status
+        ;;
+    "today")
+        today
+        ;;
+    "annotate")
+        annotate "$@"
         ;;
     *)
         echo "unknown command \"$CMD\"" 1>&2
