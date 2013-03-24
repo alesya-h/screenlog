@@ -102,7 +102,8 @@ function status {
 
 function today {
     DAY_DIR="$TARGET_DIR/$(date "$DATE_DIR_FORMAT")"
-    ls -1 "$DAY_DIR" | sed 's/^[^(]*(\(.*\)).png$/\1/' | uniq -c
+    ls -1 "$DAY_DIR" | sed 's/^[^(]*(\(.*\)).png$/\1/' | sort | uniq -c | awk '
+    {allmin = $i*5; m = allmin % 60; h = (allmin - m)/60; $1 = sprintf("%d:%02d",h, m) ;print}' | sort -r
 }
 
 function annotate {
