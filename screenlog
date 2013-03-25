@@ -14,7 +14,9 @@ Supported commands are:
     start [-d n]  - Start taking screenshots
     stop          - Stop taking screenshots
     take          - Take screenshot
-Requires zenity and rename (non-perl, util-linux one) to work propperly.
+    list [date]   - List screenshots at date (default: today)
+    time [date]   - List spent time by activity at date (default: today)
+Requires scrot, zenity and rename (from util-linux) to work propperly.
 EOF
     exit 255
 fi
@@ -100,9 +102,13 @@ function status {
     fi
 }
 
-function today {
-    DAY_DIR="$TARGET_DIR/$(date "$DATE_DIR_FORMAT")"
-    ls -1 "$DAY_DIR" | sed 's/^[^(]*(\(.*\)).png$/\1/' | sort | uniq -c | awk '
+function list_at_date {
+    DAY_DIR="$TARGET_DIR/$(date -d "$1" "$DATE_DIR_FORMAT" )"
+    ls -1 "$DAY_DIR" | sed -E 's/\).png$//; s/^(..)-(..)-(..) \(/\1:\2 - /;'
+}
+
+function time_at_date {
+    "$SELF" list "$1" | sed -E 's/^..:.. - //' | sort | uniq -c | awk '
     {allmin = $i*5; m = allmin % 60; h = (allmin - m)/60; $1 = sprintf("%d:%02d",h, m) ;print}' | sort -r
 }
 
@@ -147,8 +153,11 @@ case "$CMD" in
     "status")
         status
         ;;
-    "today")
-        today
+    "time")
+        time_at_date "$@"
+        ;;
+    "list")
+        list_at_date "$@"
         ;;
     "annotate")
         annotate "$@"
