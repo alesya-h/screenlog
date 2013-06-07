@@ -16,6 +16,7 @@ Supported commands are:
     take          - Take screenshot
     list [date]   - List screenshots at date (default: today)
     time [date]   - List spent time by activity at date (default: today)
+    show [string] - List spent time on matching activity
 Requires scrot, zenity and rename (from util-linux) to work propperly.
 EOF
     exit 255
@@ -31,6 +32,12 @@ function running {
 function set_note {
     [ $# -eq 1 ] || { echo "Error: set_note takes exactly 1 argument"; exit 1; }
     echo "$1" > "$CURRENT_NOTE"
+}
+
+function show_last {
+    N=${1:-1}
+    cd "$TARGET_DIR/$(date "$DATE_DIR_FORMAT")"
+    ls |tail -${N}|head -1|xargs -d "\n" sxiv
 }
 
 function take_screenshot {
@@ -107,9 +114,23 @@ function list_at_date {
     ls -1 "$DAY_DIR" | sed -E 's/\).png$//; s/^(..)-(..)-(..) \(/\1:\2 - /;'
 }
 
+function list_to_timings {
+    sort | uniq -c | awk '
+    { allmin = $i*5;
+      m = allmin % 60;
+      h = (allmin - m)/60;
+      $1 = sprintf("%d:%02d",h, m);
+      print
+    }' | sort -r
+}
+
 function time_at_date {
-    "$SELF" list "$1" | sed -E 's/^..:.. - //' | sort | uniq -c | awk '
-    {allmin = $i*5; m = allmin % 60; h = (allmin - m)/60; $1 = sprintf("%d:%02d",h, m) ;print}' | sort -r
+    "$SELF" list "$1" | sed -E 's/^..:.. - //' | list_to_timings
+}
+
+function show_matching {
+    cd "$TARGET_DIR"
+    find -name '*.png'|grep "$*"|sed -E 's/^.\/[^/]+\///;s/\).png$//; s/^(..)-(..)-(..) \(//;'| list_to_timings
 }
 
 function annotate {
@@ -139,6 +160,12 @@ shift
 case "$CMD" in
     "take")
         take_screenshot
+        ;;
+    "last")
+        show_last "$@"
+        ;;
+    "show")
+        show_matching "$@"
         ;;
     "start")
         start_taking_screenshots "$@"
