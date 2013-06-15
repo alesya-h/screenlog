@@ -121,7 +121,7 @@ function list_to_timings {
       h = (allmin - m)/60;
       $1 = sprintf("%d:%02d",h, m);
       print
-    }' | sort -r
+    }' | sort -n
 }
 
 function time_at_date {
