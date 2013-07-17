@@ -12,7 +12,7 @@ if [ -z "$*" ]; then
     cat <<EOF
 Usage: $(basename "$0") <command> [args]
 Supported commands are:
-    start [-d n]  - Start taking screenshots
+    start [-d n] [-q] - Start taking screenshots
     stop          - Stop taking screenshots
     restart       - Restart screenlog
     status        - Show running status
@@ -89,15 +89,18 @@ function take_screenshot {
     FILENAME="$(make_filename "$PREFIX" "$NOTE")"
     import -window root "$FILENAME"
     set_last_prefix "$PREFIX"
-    DURATION="$(date -u -d "@$(expr $(date +%s) - $(stat -c %Z "$CURRENT_NOTE_FILE"))" +%R)"
-    MESSAGE="What you have been doing now, at $(date +%R) ?\nCurrent streak: $DURATION"
-    NEW_NOTE="$(zenity --entry --entry-text="$NOTE" --text="$MESSAGE" || echo "$NOTE" )"
-    rename_last "$NEW_NOTE"
 }
 
 function take_screenshots {
+    ASK_RENAME=true
+    DELAY=0
+    while getopts d:q name; do
+        case "$name" in
+        d) DELAY="$OPTARG";;
+        q) ASK_RENAME='';;
+        esac
+    done
     SLEEP_PID=''
-    DELAY="${1:-0}"
     trap 'kill ${SLEEP_PID}; rm ${PIDFILE}; trap - INT QUIT TERM EXIT; exit' INT QUIT TERM EXIT
     if [ "$DELAY" -gt 0 ]; then
         sleep "$DELAY" &
@@ -106,6 +109,15 @@ function take_screenshots {
     fi
     while true; do
         "$SELF" take
+        if [ -n "$ASK_RENAME" ]; then
+            NOTE="$(current_note)"
+            DURATION="$(date -u -d "@$(expr $(date +%s) - $(stat -c %Z "$CURRENT_NOTE_FILE"))" +%R)"
+            MESSAGE="What you have been doing now, at $(date +%R) ?\nCurrent streak: $DURATION"
+            NEW_NOTE="$(zenity --entry --entry-text="$NOTE" --text="$MESSAGE" || echo "$NOTE" )"
+        else
+            NEW_NOTE="unnamed"
+        fi
+        rename_last "$NEW_NOTE"
         sleep $INTERVAL &
         SLEEP_PID="$!"
         wait "$SLEEP_PID"
@@ -113,15 +125,10 @@ function take_screenshots {
 }
 
 function start_taking_screenshots {
-    while getopts d: name; do
-        case "$name" in
-        d) DELAY="$OPTARG";;
-        esac
-    done
     if running ; then
         echo "Screenlog is already running as process $(cat ${PIDFILE})"
     else
-        take_screenshots $DELAY &
+        take_screenshots "$@" &
         echo $! > "$PIDFILE"
         echo "Started taking screenshots"
     fi
