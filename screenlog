@@ -109,13 +109,17 @@ function take_screenshots {
     fi
     while true; do
         "$SELF" take
+        NOTE="$(current_note)"
         if [ -n "$ASK_RENAME" ]; then
-            NOTE="$(current_note)"
             DURATION="$(date -u -d "@$(expr $(date +%s) - $(stat -c %Z "$CURRENT_NOTE_FILE"))" +%R)"
             MESSAGE="What you have been doing now, at $(date +%R) ?\nCurrent streak: $DURATION"
             NEW_NOTE="$(zenity --entry --entry-text="$NOTE" --text="$MESSAGE" || echo "$NOTE" )"
         else
-            NEW_NOTE="unnamed"
+            if [ "$(current_note|cut -c 1)" == "?" ];then
+                NEW_NOTE="$NOTE"
+            else
+                NEW_NOTE="?$NOTE"
+            fi
         fi
         rename_last "$NEW_NOTE"
         sleep $INTERVAL &
