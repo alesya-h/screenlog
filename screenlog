@@ -128,7 +128,7 @@ function take_screenshots {
             else
                 NEW_NOTE="?$NOTE"
             fi
-            notify-send 'Took screenshot' "$NEW_NOTE"
+            notify-send -a screenlog 'Took screenshot' "$NEW_NOTE"
         fi
         rename_last "$NEW_NOTE"
         sleep $INTERVAL &
