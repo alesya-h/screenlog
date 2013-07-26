@@ -13,17 +13,17 @@ if [ -z "$*" ]; then
 Usage: $(basename "$0") <command> [args]
 Supported commands are:
     start [-d n] [-q] - Start taking screenshots
-    stop          - Stop taking screenshots
-    restart       - Restart screenlog
-    status        - Show running status
-    take          - Take screenshot
-    last          - Display last screenshot
-    rm            - Remove last screenshot
-    list [date]   - List screenshots at date (default: today)
-    time [date]   - List spent time by activity at date (default: today)
-    view [date]   - View screenshots at date (default: today)
-    show [string] - List spent time on matching activity
-    rename <note> - Changes last screenshot annotation
+    stop              - Stop taking screenshots
+    restart           - Restart screenlog
+    status            - Show running status
+    take              - Take screenshot
+    last              - Display last screenshot
+    rm                - Remove last screenshot
+    list [date]       - List screenshots at date (default: today)
+    time [date]       - List spent time by activity at date (default: today)
+    view [-r] [date]  - View screenshots at date (default: today)
+    show [string]     - List spent time on matching activity
+    rename <note>     - Changes last screenshot annotation
     annotate [-d date] [-f from_time] [-t to_time] [-n] - Bulk rename
                     -d defaults to today
                     -f,-t are expressions in sed regex range. use
@@ -175,9 +175,19 @@ function list_at_date {
 }
 
 function view_at_date {
+    if [ "$1" == "-r" ]; then
+        REVRSE=true
+        shift
+    fi
     DAY_DIR="$TARGET_DIR/$(date -d "$1" "$DATE_DIR_FORMAT" )"
     cd "$DAY_DIR"
-    ls -1| xargs -d "\n" sxiv
+    ls -1| (
+        if [ "$REVERSE" ];then
+            cat
+        else
+            tac
+        fi
+    ) |xargs -d "\n" sxiv
 }
 
 function list_to_timings {
