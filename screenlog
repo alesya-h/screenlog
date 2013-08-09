@@ -101,7 +101,6 @@ function take_screenshot {
 function take_screenshots {
     ASK_RENAME=true
     DELAY=0
-    INTERVAL="$((60*10))" # every 10 minutes
     while getopts d:i:q name; do
         case "$name" in
         d) DELAY="$OPTARG";;
@@ -132,7 +131,7 @@ function take_screenshots {
             notify-send -a screenlog 'Took screenshot' "$NEW_NOTE"
         fi
         rename_last "$NEW_NOTE"
-        sleep $INTERVAL &
+        sleep "${INTERVAL-$((RANDOM % (5*60) +5*60))}" &
         SLEEP_PID="$!"
         wait "$SLEEP_PID"
     done
