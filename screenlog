@@ -3,7 +3,6 @@ TARGET_DIR="$HOME/screenlog"
 PIDFILE="$TARGET_DIR/.$(basename "$0").pid"
 CURRENT_NOTE_FILE="$TARGET_DIR/current_note"
 LAST_PREFIX_FILE="$TARGET_DIR/last_prefix"
-INTERVAL="$((60*5))" # take a screenshot every 5 minutes
 DATE_DIR_FORMAT='+%Y-%m-%d_%A'
 DATE_FILE_FORMAT='+%H-%M-%S'
 SELF=$(readlink -e "$0")
@@ -12,7 +11,7 @@ if [ -z "$*" ]; then
     cat <<EOF
 Usage: $(basename "$0") <command> [args]
 Supported commands are:
-    start [-d n] [-q] - Start taking screenshots
+    start [-d n] [-i n] [-q] - Start taking screenshots
     stop              - Stop taking screenshots
     restart           - Restart screenlog
     status            - Show running status
@@ -102,9 +101,11 @@ function take_screenshot {
 function take_screenshots {
     ASK_RENAME=true
     DELAY=0
-    while getopts d:q name; do
+    INTERVAL="$((60*10))" # every 10 minutes
+    while getopts d:i:q name; do
         case "$name" in
         d) DELAY="$OPTARG";;
+        i) INTERVAL="$OPTARG";;
         q) ASK_RENAME='';;
         esac
     done
