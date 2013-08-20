@@ -176,7 +176,7 @@ function list_at_date {
 
 function view_at_date {
     if [ "$1" == "-r" ]; then
-        REVRSE=true
+        REVERSE=true
         shift
     fi
     DAY_DIR="$TARGET_DIR/$(date -d "$1" "$DATE_DIR_FORMAT" )"
