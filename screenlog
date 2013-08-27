@@ -225,9 +225,9 @@ function annotate {
     shift $(($OPTIND-1))
     MESSAGE="$*"
     echo "date:$DATE_D from:$FROM to:$TO"
-    pushd "$TARGET_DIR/$(date -d "$DATE_D" "$DATE_DIR_FORMAT")"
-    ls | sed -n -e "/^${FROM}/,/^${TO}/p" | xargs -d "\n" $RENAME_CMD "s/\(.*\)/(${MESSAGE})/" --
-    popd
+    pushd "$TARGET_DIR/$(date -d "$DATE_D" "$DATE_DIR_FORMAT")" >/dev/null
+    ls | sed -n -e "/^${FROM}/,/^${TO}/p" | xargs -d "\n" echo $RENAME_CMD "s/\(.*\)/(${MESSAGE})/" --
+    popd >/dev/null
 }
 
 CMD="$1"
