@@ -6,7 +6,7 @@ if [ -f "$CONFIG_FILE" ]; then
 fi
 
 : ${TARGET_DIR:="$HOME/screenlog"}
-: ${INTERVAL:=5}
+: ${INTERVAL:=$((5*60))}
 
 PIDFILE="$TARGET_DIR/.$(basename "$0").pid"
 CURRENT_NOTE_FILE="$TARGET_DIR/current_note"
