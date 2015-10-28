@@ -6,7 +6,6 @@ if [ -f "$CONFIG_FILE" ]; then
 fi
 
 : ${TARGET_DIR:="$HOME/screenlog"}
-: ${INTERVAL:=$((5*60))}
 
 PIDFILE="$TARGET_DIR/.$(basename "$0").pid"
 CURRENT_NOTE_FILE="$TARGET_DIR/current_note"
@@ -42,6 +41,10 @@ Requires scrot, zenity and rename (from util-linux) to work propperly.
 EOF
     exit 255
 fi
+
+function interval(){
+  echo "$((1*60))"
+}
 
 function running {
     if [ -e "$PIDFILE" ]; then
@@ -138,7 +141,7 @@ function take_screenshots {
             notify-send -a screenlog 'Took screenshot' "$NEW_NOTE"
         fi
         rename_last "$NEW_NOTE"
-        sleep "$INTERVAL" &
+        sleep "$(interval)" &
         SLEEP_PID="$!"
         wait "$SLEEP_PID"
     done
@@ -199,7 +202,7 @@ function view_at_date {
 
 function list_to_timings {
     sort | uniq -c | awk "
-    { allmin = \$1*${INTERVAL};
+    { allmin = \$1*$(interval);
       m = allmin % 60;
       h = (allmin - m)/60;
       \$1 = sprintf(\"%d:%02d\",h, m);
